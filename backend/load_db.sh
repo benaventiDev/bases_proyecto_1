@@ -1,0 +1,1 @@
+sqlldr benaventi/benaventi@oracle:1521/ORCL18 control=./loader.ctl log=log.log

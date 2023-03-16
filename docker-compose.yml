@@ -1,0 +1,67 @@
+version: '3.8'
+services:
+  oracle:
+    image: dockerhelp/docker-oracle-ee-18c
+    container_name: oracle
+    cpus: 3
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    volumes:
+      - oracle_data:/home/benaventi/Documents/Java/oracle_docker/oradata
+      - oracle_logs:/home/benaventi/Documents/Java/oracle_docker/diag
+      - ./oracle-database-ee-21c-1.0-1.ol8.x86_64.rpm:/oracle.rpm
+      - ./scripts/post_install.sh:/post_install.sh
+      - ./scripts/post_script.sh:/post_script.sh
+
+    command: >
+      sh -c "if [ -f /flag ]; then
+                echo 'Running script B'
+                sh /post_script.sh
+            else
+                echo 'Running script A'
+                sh /post_install.sh
+                touch /flag
+            fi;
+            tail -f /dev/null"
+    restart: unless-stopped
+  sql:
+    image: ubuntu
+    container_name: sql
+    environment:
+      - ORACLE_HOME=/instantclient_19_18
+      - LD_LIBRARY_PATH=/instantclient_19_18
+      - PATH=$PATH:/instantclient_19_18
+    ports:
+      - "4000:4000"
+      - "3000:3000"
+    volumes:
+      - /home/benaventi/Downloads/instantclient-basiclite.zip:/sql/instantclient-basiclite.zip
+      - /home/benaventi/Downloads/instantclient-sqlplus.zip:/sql/instantclient-sqlplus.zip
+      - /home/benaventi/Downloads/instantclient-tools.zip:/sql/instantclient-tools.zip
+      - ./scripts/ubuntu_sql.sh:/ubuntu_sql.sh
+      - ./backend:/backend
+    command: >
+      sh -c "if [ -f /flag ]; then
+                echo 'Running script B'
+                tail -f /dev/null
+            else
+                echo 'Running script A'
+                sh /ubuntu_sql.sh
+                touch /flag
+            fi;
+            tail -f /dev/null"
+    stdin_open: true
+    tty: true
+    depends_on:
+      - oracle
+    restart: unless-stopped
+
+
+volumes:
+  oracle_data:
+    driver: local
+  oracle_logs:
+  
+  
+
